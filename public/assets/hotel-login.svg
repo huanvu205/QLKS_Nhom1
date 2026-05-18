@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420">
+  <rect width="640" height="420" fill="#eff9ff"/>
+  <circle cx="130" cy="92" r="48" fill="#d7f2ff"/>
+  <circle cx="475" cy="84" r="58" fill="#d7f2ff"/>
+  <circle cx="534" cy="132" r="34" fill="#c7ecff"/>
+  <path d="M100 317c85 58 348 64 450 0v50H100z" fill="#a7e8d5"/>
+  <path d="M175 162h292v160H175z" fill="#f4b942"/>
+  <path d="M202 124h238l38 42H164z" fill="#f59e0b"/>
+  <path d="M196 166h250v150H196z" fill="#ffc85a"/>
+  <path d="M223 207h32v46h-32zM286 207h32v46h-32zM349 207h32v46h-32zM412 207h32v46h-32z" fill="#fff8d9"/>
+  <path d="M223 207c0-18 32-18 32 0M286 207c0-18 32-18 32 0M349 207c0-18 32-18 32 0M412 207c0-18 32-18 32 0" fill="#fef3c7"/>
+  <path d="M301 322v-63c0-28 38-28 38 0v63z" fill="#7c2d12"/>
+  <path d="M170 322h300" stroke="#7c2d12" stroke-width="8" stroke-linecap="round"/>
+  <path d="M320 66l13 26 29 4-21 20 5 29-26-14-26 14 5-29-21-20 29-4z" fill="#facc15"/>
+  <text x="286" y="162" font-family="Arial" font-size="24" font-weight="700" fill="#7c2d12">Hotel</text>
+  <path d="M74 132h96v46H74zM475 132h96v46h-96z" fill="#dff6ff" stroke="#38bdf8" stroke-width="3"/>
+  <path d="M88 148h66M88 162h46M489 148h66M489 162h46" stroke="#0ea5e9" stroke-width="5" stroke-linecap="round"/>
+  <path d="M116 196c34 30 79 40 132 27M520 196c-34 30-79 40-132 27" fill="none" stroke="#94a3b8" stroke-width="3" stroke-dasharray="8 8"/>
+  <circle cx="72" cy="318" r="22" fill="#fb7185"/>
+  <circle cx="560" cy="318" r="24" fill="#fb7185"/>
+</svg>
