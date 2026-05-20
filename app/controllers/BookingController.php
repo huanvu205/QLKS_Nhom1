@@ -211,20 +211,29 @@ class BookingController extends Controller
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $code = trim((string) $this->post('MaBooking'));
+            $paymentMethod = trim((string) $this->post('PhuongThuc')) ?: 'TienMat';
             $booking = $this->bookingTotal($code);
 
             if ($booking) {
                 Database::execute(
                     "IF NOT EXISTS (SELECT 1 FROM HoaDon WHERE MaBooking = ?)
-                     INSERT INTO HoaDon (MaHD, MaBooking, NgayLap, TongTien, TrangThai)
-                     VALUES (?, ?, GETDATE(), ?, N'Đã thanh toán')",
-                    [$code, 'HD' . date('His'), $code, $booking['TongTien']]
+                     INSERT INTO HoaDon (MaHD, MaBooking, NgayLap, TongTien, TrangThai, PhuongThuc)
+                     VALUES (?, ?, GETDATE(), ?, N'Đã thanh toán', ?)",
+                    [$code, 'HD' . date('His'), $code, $booking['TongTien'], $paymentMethod]
                 );
                 Database::execute("UPDATE Booking SET TrangThai = N'Đã trả phòng' WHERE MaBooking = ?", [$code]);
                 Database::execute("UPDATE Phong SET TrangThai = N'Trống' WHERE MaPhong = ?", [$booking['MaPhong']]);
             }
 
-            $this->sendPaymentEmail($code);
+            // collect optional notes
+            $note = '';
+            if ($paymentMethod === 'ChuyenKhoan') {
+                $note = trim((string) $this->post('GhiChuChuyenKhoan'));
+            } elseif ($paymentMethod === 'The') {
+                $note = trim((string) $this->post('GhiChuThe'));
+            }
+
+            $this->sendPaymentEmail($code, $paymentMethod, $note);
             $this->redirect('invoices');
         }
 
@@ -359,7 +368,7 @@ class BookingController extends Controller
         );
     }
 
-    private function sendPaymentEmail(string $code): void
+    private function sendPaymentEmail(string $code, string $method = '', string $note = ''): void
     {
         $invoice = Database::fetch(
             "SELECT hd.MaHD, hd.MaBooking, hd.TongTien, hd.NgayLap, kh.HoTen, kh.Email, p.SoPhong
@@ -386,12 +395,27 @@ class BookingController extends Controller
                 '</tr>';
         }
 
+        $methodLabel = '';
+        if ($method) {
+            $map = [
+                'TienMat' => 'Tiền mặt',
+                'ChuyenKhoan' => 'Chuyển khoản',
+                'The' => 'Quẹt thẻ',
+                'VNPAY' => 'VNPAY',
+            ];
+            $methodLabel = '<p><strong>Phương thức thanh toán:</strong> ' . htmlspecialchars($map[$method] ?? $method, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
+            if ($note !== '') {
+                $methodLabel .= '<p><strong>Ghi chú:</strong> ' . htmlspecialchars($note, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
+            }
+        }
+
         Mailer::send(
             $invoice['Email'],
             'Hoa don thanh toan HOTEL - ' . $invoice['MaHD'],
             '<h2>HOTEL thông báo thanh toán thành công</h2>' .
             '<p>Xin chào <b>' . htmlspecialchars($invoice['HoTen'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b>,</p>' .
             '<p>Hóa đơn <b>' . htmlspecialchars($invoice['MaHD'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b> đã được thanh toán.</p>' .
+            $methodLabel .
             '<table border="1" cellpadding="8" cellspacing="0"><thead><tr><th>Nội dung</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead><tbody>' .
             $rows .
             '</tbody></table>' .

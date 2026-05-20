@@ -81,6 +81,7 @@ CREATE TABLE HoaDon (
     NgayLap DATETIME NOT NULL DEFAULT GETDATE(),
     TongTien DECIMAL(18, 0) NOT NULL,
     TrangThai NVARCHAR(30) NOT NULL,
+    PhuongThuc NVARCHAR(50) NULL,
     CONSTRAINT FK_HoaDon_Booking FOREIGN KEY (MaBooking) REFERENCES Booking(MaBooking)
 );
 
@@ -135,6 +136,6 @@ INSERT INTO SuDungDichVu (MaBooking, MaDV, SoLuong, NgaySD) VALUES
 (N'BK001', N'DV001', 2, '2026-05-17'),
 (N'BK001', N'DV002', 3, '2026-05-17');
 
-INSERT INTO HoaDon (MaHD, MaBooking, NgayLap, TongTien, TrangThai) VALUES
-(N'HD001', N'BK001', GETDATE(), 2175000, N'Đã thanh toán');
+INSERT INTO HoaDon (MaHD, MaBooking, NgayLap, TongTien, TrangThai, PhuongThuc) VALUES
+(N'HD001', N'BK001', GETDATE(), 2175000, N'Đã thanh toán', N'TienMat');
 GO

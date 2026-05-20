@@ -162,6 +162,18 @@ textarea { resize: vertical; }
 .role-default { background: #e2e8f0; color: #475569; }
 .alert-success { background: #ecfdf5; border-color: #6ee7b7; color: #134e4a; }
 .alert-error { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+
+/* Payment method selector */
+.payment-methods { display: flex; gap: 8px; margin: 12px 0 8px; flex-wrap:wrap; }
+.pay-option { display: inline-flex; align-items: center; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 8px; cursor: pointer; background: #fff; }
+.pay-option input { margin-right: 8px; }
+.pay-option:hover { box-shadow: 0 2px 8px rgba(2,6,23,0.06); }
+.pay-label { font-weight:600; color:#0f172a }
+.payment-extra { margin: 8px 0 12px; padding: 10px; border-radius:6px; background:#fbfbfc; border:1px solid #eef2ff }
+.vnpay-button { background: #0ea5a4; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+.vnpay-button:hover { opacity: 0.95 }
+.form-actions { display:flex; gap:8px; margin-top:12px }
+.secondary-button { background:transparent; border:1px solid #cbd5e1; padding:8px 12px; border-radius:6px; cursor:pointer }
 .search-row input { flex: 1; min-width: 220px; }
 .primary-button, .ghost-button { border-radius: 8px; min-height: 38px; padding: 10px 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .18s ease-in-out; font-weight: 700; }
 .primary-button {
