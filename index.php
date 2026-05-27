@@ -8,6 +8,7 @@ require_once __DIR__ . '/app/core/Mailer.php';
 require_once __DIR__ . '/app/core/Controller.php';
 require_once __DIR__ . '/app/core/Router.php';
 require_once __DIR__ . '/app/controllers/AuthController.php';
+require_once __DIR__ . '/app/controllers/CustomerPortalController.php';
 require_once __DIR__ . '/app/controllers/RoomController.php';
 require_once __DIR__ . '/app/controllers/CustomerController.php';
 require_once __DIR__ . '/app/controllers/BookingController.php';

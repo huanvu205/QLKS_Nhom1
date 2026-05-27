@@ -23,8 +23,8 @@ $statusClassMap = [
             <label><span>Mã booking</span><input name="MaBooking" value="<?= htmlspecialchars($nextCode) ?>" required></label>
             <label><span>Khách hàng</span><select name="MaKH"><?php foreach ($customers as $c): ?><option value="<?= htmlspecialchars($c['MaKH']) ?>"><?= htmlspecialchars($c['HoTen']) ?></option><?php endforeach; ?></select></label>
             <label><span>Phòng</span><select name="MaPhong"><?php foreach ($rooms as $r): ?><option value="<?= htmlspecialchars($r['MaPhong']) ?>"><?= htmlspecialchars($r['SoPhong'] . ' - ' . $r['TenLP'] . ' - ' . number_format($r['GiaPhong'], 0, ',', '.') . 'đ') ?></option><?php endforeach; ?></select></label>
-            <label><span>Ngày nhận</span><input name="NgayNhan" type="date" value="<?= date('Y-m-d') ?>" required></label>
-            <label><span>Ngày trả</span><input name="NgayTra" type="date" value="<?= date('Y-m-d', strtotime('+1 day')) ?>" required></label>
+            <label><span>Ngày nhận</span><input name="NgayNhan" type="datetime-local" value="<?= date('Y-m-d\T14:00') ?>" required></label>
+            <label><span>Ngày trả</span><input name="NgayTra" type="datetime-local" value="<?= date('Y-m-d\T12:00', strtotime('+1 day')) ?>" required></label>
             <label><span>Số người</span><input name="SoNguoi" type="number" value="1" min="1"></label>
             <label class="span-2"><span>Ghi chú</span><textarea name="GhiChu" rows="3"></textarea></label>
         </div>
@@ -35,8 +35,8 @@ $statusClassMap = [
             <div class="panel-head"><div><h2>Cập nhật booking</h2><p>Chọn một dòng trong bảng để sửa hoặc hủy booking.</p></div></div>
         <div class="field-grid">
             <label><span>Mã booking</span><input name="MaBooking" value="<?= htmlspecialchars($edit['MaBooking'] ?? '') ?>" readonly></label>
-            <label><span>Ngày nhận</span><input name="NgayNhan" type="date" value="<?= htmlspecialchars(isset($edit['NgayNhan']) ? substr((string) $edit['NgayNhan'], 0, 10) : date('Y-m-d')) ?>" required></label>
-            <label><span>Ngày trả</span><input name="NgayTra" type="date" value="<?= htmlspecialchars(isset($edit['NgayTra']) ? substr((string) $edit['NgayTra'], 0, 10) : date('Y-m-d', strtotime('+1 day'))) ?>"></label>
+            <label><span>Ngày nhận</span><input name="NgayNhan" type="datetime-local" value="<?= htmlspecialchars(isset($edit['NgayNhan']) ? date('Y-m-d\TH:i', strtotime((string)$edit['NgayNhan'])) : date('Y-m-d\T14:00')) ?>" required></label>
+            <label><span>Ngày trả</span><input name="NgayTra" type="datetime-local" value="<?= htmlspecialchars(isset($edit['NgayTra']) ? date('Y-m-d\TH:i', strtotime((string)$edit['NgayTra'])) : date('Y-m-d\T12:00', strtotime('+1 day'))) ?>"></label>
             <label><span>Số người</span><input name="SoNguoi" type="number" value="<?= htmlspecialchars($edit['SoNguoi'] ?? '1') ?>"></label>
             <label><span>Trạng thái</span><select name="TrangThai"><?php foreach (['Chờ xác nhận', 'Đã đặt', 'Đã nhận phòng', 'Đã trả phòng', 'Đã hủy'] as $s): ?><option <?= ($edit['TrangThai'] ?? '') === $s ? 'selected' : '' ?>><?= htmlspecialchars($s) ?></option><?php endforeach; ?></select></label>
             <label><span>Ghi chú</span><textarea name="GhiChu" rows="3"><?= htmlspecialchars($edit['GhiChu'] ?? '') ?></textarea></label>

@@ -8,8 +8,21 @@ class Database
     {
         $config = self::config();
 
-        if (($config['driver'] ?? 'pdo_sqlsrv') !== 'pdo_sqlsrv') {
+        if (($config['driver'] ?? 'pdo_sqlsrv') !== 'pdo_sqlsrv' && ($config['driver'] ?? '') !== 'mysql') {
             throw new RuntimeException('Che do hien tai khong dung PDO connection.');
+        }
+
+        if (self::$pdo instanceof PDO) {
+            return self::$pdo;
+        }
+
+        if (($config['driver'] ?? '') === 'mysql') {
+            $dsn = sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', $config['server'], $config['database']);
+            self::$pdo = new PDO($dsn, $config['username'], $config['password'], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]);
+            return self::$pdo;
         }
 
         if (self::$pdo instanceof PDO) {
@@ -33,6 +46,8 @@ class Database
 
     public static function fetchAll(string $sql, array $params = []): array
     {
+        $sql = self::translateSql($sql);
+
         if (self::usesSqlcmd()) {
             $sql = self::bindParams($sql, $params);
             $sql = rtrim(trim($sql), ';') . ' FOR JSON PATH, INCLUDE_NULL_VALUES;';
@@ -77,6 +92,9 @@ class Database
 
     public static function execute(string $sql, array $params = []): bool
     {
+        [$sql, $params] = self::translateStatement($sql, $params);
+        $sql = self::translateSql($sql);
+
         if (self::usesSqlcmd()) {
             self::runSqlcmd("SET NOCOUNT ON;\n" . self::bindParams($sql, $params));
             return true;
@@ -94,6 +112,54 @@ class Database
     private static function config(): array
     {
         return require __DIR__ . '/../config/database.php';
+    }
+
+    public static function isMySql(): bool
+    {
+        $config = self::config();
+        return ($config['driver'] ?? '') === 'mysql';
+    }
+
+    private static function translateSql(string $sql): string
+    {
+        if (!self::isMySql()) {
+            return $sql;
+        }
+
+        // Translate GETDATE() -> CURRENT_TIMESTAMP
+        $sql = str_ireplace('GETDATE()', 'CURRENT_TIMESTAMP', $sql);
+
+        // Translate DATEDIFF(day, a, b) -> DATEDIFF(b, a)
+        if (preg_match_all('/DATEDIFF\(\s*day\s*,\s*(.+?)\s*,\s*(.+?)\s*\)/i', $sql, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $m) {
+                $sql = str_replace($m[0], "DATEDIFF({$m[2]}, {$m[1]})", $sql);
+            }
+        }
+
+        // Translate SELECT TOP N ... -> SELECT ... LIMIT N
+        if (preg_match('/^\s*SELECT\s+TOP\s+(\d+)\s+(.*)$/is', $sql, $m)) {
+            $sql = "SELECT " . $m[2] . " LIMIT " . $m[1];
+        }
+
+        return $sql;
+    }
+
+    private static function translateStatement(string $sql, array $params): array
+    {
+        if (!self::isMySql()) {
+            return [$sql, $params];
+        }
+
+        // SQL Server supports IF NOT EXISTS before INSERT; MySQL does not.
+        // HoaDon.MaBooking is UNIQUE, so INSERT IGNORE preserves the same "create once" behavior.
+        $pattern = '/^\s*IF\s+NOT\s+EXISTS\s*\(\s*SELECT\s+1\s+FROM\s+HoaDon\s+WHERE\s+MaBooking\s*=\s*\?\s*\)\s*(INSERT\s+INTO\s+HoaDon\b.*)$/is';
+        if (preg_match($pattern, $sql, $matches)) {
+            array_shift($params);
+            $insert = preg_replace('/^\s*INSERT\s+INTO/i', 'INSERT IGNORE INTO', $matches[1], 1);
+            return [$insert, $params];
+        }
+
+        return [$sql, $params];
     }
 
     private static function usesSqlcmd(): bool

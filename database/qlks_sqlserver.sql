@@ -22,7 +22,8 @@ CREATE TABLE TaiKhoan (
     MatKhau NVARCHAR(255) NOT NULL,
     HoTen NVARCHAR(100) NOT NULL,
     Email NVARCHAR(100) NULL,
-    VaiTro NVARCHAR(30) NOT NULL CHECK (VaiTro IN (N'Admin', N'Lễ tân', N'Kế toán')),
+    MaKH NVARCHAR(20) NULL,
+    VaiTro NVARCHAR(30) NOT NULL CONSTRAINT CK_TaiKhoan_VaiTro CHECK (VaiTro IN (N'Admin', N'Lễ tân', N'Kế toán', N'Khách hàng')),
     TrangThai NVARCHAR(30) NOT NULL DEFAULT N'Đang hoạt động'
 );
 
@@ -53,6 +54,9 @@ CREATE TABLE KhachHang (
     DiaChi NVARCHAR(255) NULL
 );
 
+ALTER TABLE TaiKhoan
+ADD CONSTRAINT FK_TaiKhoan_KhachHang FOREIGN KEY (MaKH) REFERENCES KhachHang(MaKH);
+
 CREATE TABLE DichVu (
     MaDV NVARCHAR(20) NOT NULL PRIMARY KEY,
     TenDV NVARCHAR(100) NOT NULL,
@@ -65,8 +69,8 @@ CREATE TABLE Booking (
     MaBooking NVARCHAR(20) NOT NULL PRIMARY KEY,
     MaKH NVARCHAR(20) NOT NULL,
     MaPhong NVARCHAR(20) NOT NULL,
-    NgayNhan DATE NOT NULL,
-    NgayTra DATE NOT NULL,
+    NgayNhan DATETIME NOT NULL,
+    NgayTra DATETIME NOT NULL,
     SoNguoi INT NOT NULL,
     TrangThai NVARCHAR(30) NOT NULL,
     GhiChu NVARCHAR(255) NULL,
@@ -96,10 +100,10 @@ CREATE TABLE SuDungDichVu (
 );
 GO
 
-INSERT INTO TaiKhoan (TenDangNhap, MatKhau, HoTen, Email, VaiTro, TrangThai) VALUES
-(N'admin', N'admin123', N'Nguyễn Văn Hoàng', N'admin@example.com', N'Admin', N'Đang hoạt động'),
-(N'letan01', N'123456', N'Lê Thu Mai', N'letan01@example.com', N'Lễ tân', N'Đang hoạt động'),
-(N'ketoan01', N'123456', N'Phạm Văn Nam', N'ketoan01@example.com', N'Kế toán', N'Đang hoạt động');
+INSERT INTO TaiKhoan (TenDangNhap, MatKhau, HoTen, Email, MaKH, VaiTro, TrangThai) VALUES
+(N'admin', N'$2y$10$fdL/1ex9G1nvT8iDSTtfkOfsEisTr9j4hCaeJl53OzDl.cUwMK1MS', N'Nguyễn Văn Hoàng', N'admin@example.com', NULL, N'Admin', N'Đang hoạt động'),
+(N'letan01', N'$2y$10$CxR6nLWiZYOZXOFD6y7c2Oj9lhAtTeuy8VaIydzCjKEoMKPV9XXrK', N'Lê Thu Mai', N'letan01@example.com', NULL, N'Lễ tân', N'Đang hoạt động'),
+(N'ketoan01', N'$2y$10$CxR6nLWiZYOZXOFD6y7c2Oj9lhAtTeuy8VaIydzCjKEoMKPV9XXrK', N'Phạm Văn Nam', N'ketoan01@example.com', NULL, N'Kế toán', N'Đang hoạt động');
 
 INSERT INTO LoaiPhong (MaLP, TenLP, GiaPhong, SucChua, MoTa) VALUES
 (N'LP001', N'Phòng Deluxe', 1200000, 2, N'Phòng cao cấp, view đẹp'),

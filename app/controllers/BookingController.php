@@ -16,7 +16,7 @@ class BookingController extends Controller
             Database::execute(
                 "INSERT INTO Booking (MaBooking, MaKH, MaPhong, NgayNhan, NgayTra, SoNguoi, TrangThai, GhiChu)
                  VALUES (?, ?, ?, ?, ?, ?, N'Đã đặt', ?)",
-                [$code, $this->post('MaKH'), $this->post('MaPhong'), $this->post('NgayNhan'), $this->post('NgayTra'), (int) $this->post('SoNguoi'), $this->post('GhiChu')]
+                [$code, $this->post('MaKH'), $this->post('MaPhong'), str_replace('T', ' ', $this->post('NgayNhan')), str_replace('T', ' ', $this->post('NgayTra')), (int) $this->post('SoNguoi'), $this->post('GhiChu')]
             );
             Database::execute("UPDATE Phong SET TrangThai = N'Đã đặt' WHERE MaPhong = ?", [$this->post('MaPhong')]);
             $this->sendBookingEmail($code);
@@ -61,7 +61,7 @@ class BookingController extends Controller
                 Database::execute(
                     "INSERT INTO Booking (MaBooking, MaKH, MaPhong, NgayNhan, NgayTra, SoNguoi, TrangThai, GhiChu)
                      VALUES (?, ?, ?, ?, ?, ?, N'Đã đặt', ?)",
-                    [$code, $this->post('MaKH'), $this->post('MaPhong'), $this->post('NgayNhan'), $this->post('NgayTra'), (int) $this->post('SoNguoi'), $this->post('GhiChu')]
+                    [$code, $this->post('MaKH'), $this->post('MaPhong'), str_replace('T', ' ', $this->post('NgayNhan')), str_replace('T', ' ', $this->post('NgayTra')), (int) $this->post('SoNguoi'), $this->post('GhiChu')]
                 );
                 Database::execute("UPDATE Phong SET TrangThai = N'Đã đặt' WHERE MaPhong = ?", [$this->post('MaPhong')]);
 
@@ -113,10 +113,10 @@ class BookingController extends Controller
             }
 
             if ($action === 'update') {
-                $oldBooking = Database::fetch('SELECT MaPhong FROM Booking WHERE MaBooking = ?', [$originalCode]);
+                $oldBooking = Database::fetch('SELECT MaPhong, TrangThai FROM Booking WHERE MaBooking = ?', [$originalCode]);
                 Database::execute(
                     'UPDATE Booking SET NgayNhan = ?, NgayTra = ?, SoNguoi = ?, TrangThai = ?, GhiChu = ? WHERE MaBooking = ?',
-                    [$this->post('NgayNhan'), $this->post('NgayTra'), (int) $this->post('SoNguoi'), $this->post('TrangThai'), $this->post('GhiChu'), $originalCode]
+                    [str_replace('T', ' ', $this->post('NgayNhan')), str_replace('T', ' ', $this->post('NgayTra')), (int) $this->post('SoNguoi'), $this->post('TrangThai'), $this->post('GhiChu'), $originalCode]
                 );
 
                 if ($oldBooking) {
@@ -127,6 +127,10 @@ class BookingController extends Controller
                         Database::execute("UPDATE Phong SET TrangThai = N'Đã đặt' WHERE MaPhong = ?", [$oldBooking['MaPhong']]);
                     } elseif (in_array($newStatus, ['Đã trả phòng', 'Đã hủy'], true)) {
                         Database::execute("UPDATE Phong SET TrangThai = N'Trống' WHERE MaPhong = ?", [$oldBooking['MaPhong']]);
+                    }
+
+                    if (($oldBooking['TrangThai'] ?? '') !== $newStatus) {
+                        $this->sendBookingEmail($originalCode);
                     }
                 }
 
@@ -185,6 +189,7 @@ class BookingController extends Controller
             if ($booking) {
                 Database::execute("UPDATE Booking SET TrangThai = N'Đã nhận phòng' WHERE MaBooking = ?", [$code]);
                 Database::execute("UPDATE Phong SET TrangThai = N'Đang ở' WHERE MaPhong = ?", [$booking['MaPhong']]);
+                $this->sendBookingEmail($code);
             }
             $this->redirect('check-in', ['q' => $code]);
         }
@@ -223,6 +228,7 @@ class BookingController extends Controller
                 );
                 Database::execute("UPDATE Booking SET TrangThai = N'Đã trả phòng' WHERE MaBooking = ?", [$code]);
                 Database::execute("UPDATE Phong SET TrangThai = N'Trống' WHERE MaPhong = ?", [$booking['MaPhong']]);
+                $this->sendBookingEmail($code);
             }
 
             // collect optional notes
@@ -352,19 +358,32 @@ class BookingController extends Controller
             return;
         }
 
+        $statusMap = [
+            'Đã đặt' => ['subject' => 'HOTEL xac nhan dat phong - ', 'title' => 'HOTEL xác nhận đặt phòng'],
+            'Đã nhận phòng' => ['subject' => 'HOTEL thong bao nhan phong - ', 'title' => 'HOTEL thông báo nhận phòng'],
+            'Đã trả phòng' => ['subject' => 'HOTEL thong bao tra phong - ', 'title' => 'HOTEL thông báo trả phòng'],
+            'Đã hủy' => ['subject' => 'HOTEL thong bao huy phong - ', 'title' => 'HOTEL thông báo hủy phòng'],
+            'Chờ xác nhận' => ['subject' => 'HOTEL thong bao - ', 'title' => 'HOTEL cập nhật trạng thái'],
+        ];
+
+        $st = $booking['TrangThai'];
+        $subject = ($statusMap[$st]['subject'] ?? 'HOTEL thong bao - ') . $booking['MaBooking'];
+        $title = $statusMap[$st]['title'] ?? 'Cập nhật trạng thái booking';
+
         Mailer::send(
             $booking['Email'],
-            'Xac nhan dat phong HOTEL - ' . $booking['MaBooking'],
-            '<h2>HOTEL xác nhận đặt phòng</h2>' .
+            $subject,
+            '<h2>' . $title . '</h2>' .
             '<p>Xin chào <b>' . htmlspecialchars($booking['HoTen'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b>,</p>' .
-            '<p>Booking của quý khách đã được ghi nhận.</p>' .
-            '<ul>' .
-            '<li>Mã booking: <b>' . htmlspecialchars($booking['MaBooking'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b></li>' .
-            '<li>Phòng: <b>' . htmlspecialchars($booking['SoPhong'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b></li>' .
-            '<li>Ngày nhận: ' . htmlspecialchars((string) $booking['NgayNhan'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>' .
-            '<li>Ngày trả: ' . htmlspecialchars((string) $booking['NgayTra'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>' .
-            '<li>Số người: ' . htmlspecialchars((string) $booking['SoNguoi'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</li>' .
-            '</ul>'
+            '<p>Trạng thái booking của quý khách vừa được cập nhật. Vui lòng kiểm tra thông tin lưu trú bên dưới.</p>' .
+            '<table style="width:100%; border-collapse:collapse; margin:16px 0; background:#f7faf9; border:1px solid #e2ebe8; border-radius:8px; overflow:hidden;">' .
+            '<tr><td style="padding:12px 16px; border-bottom:1px solid #e2ebe8; color:#2f6f69; width:40%;">Mã booking</td><td style="padding:12px 16px; border-bottom:1px solid #e2ebe8;"><b>' . htmlspecialchars($booking['MaBooking'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b></td></tr>' .
+            '<tr><td style="padding:12px 16px; border-bottom:1px solid #e2ebe8; color:#2f6f69;">Phòng</td><td style="padding:12px 16px; border-bottom:1px solid #e2ebe8;"><b>' . htmlspecialchars($booking['SoPhong'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b></td></tr>' .
+            '<tr><td style="padding:12px 16px; border-bottom:1px solid #e2ebe8; color:#2f6f69;">Ngày nhận</td><td style="padding:12px 16px; border-bottom:1px solid #e2ebe8;"><b>' . htmlspecialchars(date('H:i d/m/Y', strtotime((string) $booking['NgayNhan'])), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b></td></tr>' .
+            '<tr><td style="padding:12px 16px; border-bottom:1px solid #e2ebe8; color:#2f6f69;">Ngày trả</td><td style="padding:12px 16px; border-bottom:1px solid #e2ebe8;"><b>' . htmlspecialchars(date('H:i d/m/Y', strtotime((string) $booking['NgayTra'])), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b></td></tr>' .
+            '<tr><td style="padding:12px 16px; border-bottom:1px solid #e2ebe8; color:#2f6f69;">Số người</td><td style="padding:12px 16px; border-bottom:1px solid #e2ebe8;"><b>' . htmlspecialchars((string) $booking['SoNguoi'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b> người</td></tr>' .
+            '<tr><td style="padding:12px 16px; color:#2f6f69;">Trạng thái</td><td style="padding:12px 16px;"><span style="display:inline-block; padding:4px 10px; background:#eef7f4; color:#245157; border-radius:4px; font-weight:bold;">' . htmlspecialchars($booking['TrangThai'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span></td></tr>' .
+            '</table>'
         );
     }
 

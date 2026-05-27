@@ -4,8 +4,12 @@ class Router
 {
     private array $routes = [
         'login' => [AuthController::class, 'login'],
+        'register' => [CustomerPortalController::class, 'register'],
         'forgot-password' => [AuthController::class, 'forgotPassword'],
         'logout' => [AuthController::class, 'logout'],
+        'customer-rooms' => [CustomerPortalController::class, 'rooms'],
+        'customer-booking' => [CustomerPortalController::class, 'booking'],
+        'customer-bookings' => [CustomerPortalController::class, 'bookings'],
         'dashboard' => [RoomController::class, 'dashboard'],
         'password' => [AuthController::class, 'password'],
         'room-types' => [RoomController::class, 'roomTypes'],

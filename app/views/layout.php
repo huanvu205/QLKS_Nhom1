@@ -3,6 +3,7 @@
 $title = $title ?? 'QLKS';
 $active = $active ?? 'dashboard';
 $user = $_SESSION['user'] ?? null;
+$isCustomer = ($user['VaiTro'] ?? '') === 'Khách hàng';
 $menu = [
     'dashboard' => ['Màn hình chính', 'index.php?page=dashboard'],
     'password' => ['Đổi mật khẩu', 'index.php?page=password'],
@@ -19,9 +20,11 @@ $menu = [
     'reports' => ['Báo cáo - thống kê', 'index.php?page=reports'],
     'accounts' => ['Quản lý tài khoản', 'index.php?page=accounts'],
 ];
-if (($user['VaiTro'] ?? '') === 'Khách hàng') {
+if ($isCustomer) {
     $menu = [
-        'dashboard' => ['Màn hình chính', 'index.php?page=dashboard'],
+        'customer-rooms' => ['Phòng còn trống', 'index.php?page=customer-rooms'],
+        'customer-booking' => ['Đặt phòng', 'index.php?page=customer-booking'],
+        'customer-bookings' => ['Booking của tôi', 'index.php?page=customer-bookings'],
         'password' => ['Đổi mật khẩu', 'index.php?page=password'],
     ];
 }
@@ -34,13 +37,13 @@ if (($user['VaiTro'] ?? '') === 'Khách hàng') {
     <title><?= htmlspecialchars($title) ?> | QLKS</title>
     <link rel="stylesheet" href="public/assets/app.css">
 </head>
-<body>
+<body class="<?= $isCustomer ? 'customer-mode' : '' ?>">
 <?php if (($active ?? '') === 'login'): ?>
     <?php require $viewFile; ?>
 <?php else: ?>
 <div class="app-shell">
     <aside class="sidebar">
-        <a class="brand" href="index.php?page=dashboard">
+        <a class="brand" href="index.php?page=<?= $isCustomer ? 'customer-rooms' : 'dashboard' ?>">
             <span class="brand-mark">H</span>
             <span><strong>HOTEL</strong><small>Quản lý khách sạn</small></span>
         </a>

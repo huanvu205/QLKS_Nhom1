@@ -11,8 +11,8 @@
             <label><span>Mã booking</span><input name="MaBooking" value="<?= htmlspecialchars($nextCode) ?>" required></label>
             <label><span>Khách hàng</span><select name="MaKH"><?php foreach ($customers as $c): ?><option value="<?= htmlspecialchars($c['MaKH']) ?>"><?= htmlspecialchars($c['HoTen']) ?></option><?php endforeach; ?></select></label>
             <label><span>Email khách hàng</span><input name="Email" type="email" placeholder="khachhang@gmail.com" required></label>
-            <label><span>Ngày nhận phòng</span><input name="NgayNhan" type="date" value="<?= date('Y-m-d') ?>" required></label>
-            <label><span>Ngày trả phòng</span><input name="NgayTra" type="date" value="<?= date('Y-m-d', strtotime('+1 day')) ?>" required></label>
+            <label><span>Ngày nhận phòng</span><input name="NgayNhan" type="datetime-local" value="<?= date('Y-m-d\T14:00') ?>" required></label>
+            <label><span>Ngày trả phòng</span><input name="NgayTra" type="datetime-local" value="<?= date('Y-m-d\T12:00', strtotime('+1 day')) ?>" required></label>
             <label><span>Chọn phòng</span><select name="MaPhong"><?php foreach ($rooms as $r): ?><option value="<?= htmlspecialchars($r['MaPhong']) ?>"><?= htmlspecialchars($r['SoPhong'] . ' - ' . $r['TenLP'] . ' - ' . number_format($r['GiaPhong'], 0, ',', '.') . 'đ') ?></option><?php endforeach; ?></select></label>
             <label><span>Số người</span><input name="SoNguoi" type="number" value="1" min="1"></label>
             <label class="span-2"><span>Ghi chú</span><textarea name="GhiChu" rows="3"></textarea></label>

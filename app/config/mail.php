@@ -8,6 +8,6 @@ return [
     'from_name' => getenv('QLKS_MAIL_FROM_NAME') ?: 'HOTEL',
     'smtp_host' => getenv('QLKS_SMTP_HOST') ?: 'smtp.gmail.com',
     'smtp_port' => (int) (getenv('QLKS_SMTP_PORT') ?: 587),
-    'smtp_user' => getenv('QLKS_SMTP_USER') ?: '',
-    'smtp_pass' => getenv('QLKS_SMTP_PASS') ?: '',
+    'smtp_user' => getenv('QLKS_SMTP_USER') ?: 'vuhuan123890@gmail.com',
+    'smtp_pass' => getenv('QLKS_SMTP_PASS') ?: 'lylhdoffierdtbeg',
 ];

@@ -14,8 +14,9 @@ class AuthController extends Controller
                     'TenDangNhap' => $user['TenDangNhap'],
                     'HoTen' => $user['HoTen'],
                     'VaiTro' => $user['VaiTro'],
+                    'MaKH' => $user['MaKH'] ?? null,
                 ];
-                $this->redirect('dashboard');
+                $this->redirect(($user['VaiTro'] ?? '') === 'Khách hàng' ? 'customer-rooms' : 'dashboard');
             }
 
             $error = 'Sai tài khoản, mật khẩu hoặc tài khoản đã bị khóa.';
@@ -43,7 +44,7 @@ class AuthController extends Controller
                 $message = 'Vui lòng nhập email nhận mật khẩu.';
             } else {
                 $newPassword = 'KS' . random_int(100000, 999999);
-                Database::execute('UPDATE TaiKhoan SET MatKhau = ?, Email = ? WHERE TenDangNhap = ?', [$newPassword, $email, $username]);
+                Database::execute('UPDATE TaiKhoan SET MatKhau = ?, Email = ? WHERE TenDangNhap = ?', [password_hash($newPassword, PASSWORD_DEFAULT), $email, $username]);
 
                 Mailer::send(
                     $email,
@@ -86,7 +87,7 @@ class AuthController extends Controller
             } elseif ($new === '' || $new !== $confirm) {
                 $message = 'Mật khẩu mới và xác nhận mật khẩu chưa khớp.';
             } else {
-                Database::execute('UPDATE TaiKhoan SET MatKhau = ? WHERE TenDangNhap = ?', [$new, $username]);
+                Database::execute('UPDATE TaiKhoan SET MatKhau = ? WHERE TenDangNhap = ?', [password_hash($new, PASSWORD_DEFAULT), $username]);
                 $message = 'Đã đổi mật khẩu thành công.';
             }
         }
@@ -105,9 +106,10 @@ class AuthController extends Controller
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $action = $this->post('action');
+            $rawPassword = (string) $this->post('MatKhau');
             $params = [
                 trim((string) $this->post('TenDangNhap')),
-                (string) $this->post('MatKhau'),
+                $rawPassword,
                 (string) $this->post('HoTen'),
                 (string) $this->post('Email'),
                 (string) $this->post('VaiTro'),
@@ -117,17 +119,24 @@ class AuthController extends Controller
             if ($action === 'create') {
                 Database::execute(
                     'INSERT INTO TaiKhoan (TenDangNhap, MatKhau, HoTen, Email, VaiTro, TrangThai) VALUES (?, ?, ?, ?, ?, ?)',
-                    $params
+                    [$params[0], password_hash($rawPassword, PASSWORD_DEFAULT), $params[2], $params[3], $params[4], $params[5]]
                 );
             } elseif ($action === 'update') {
-                Database::execute(
-                    'UPDATE TaiKhoan SET MatKhau = ?, HoTen = ?, Email = ?, VaiTro = ?, TrangThai = ? WHERE TenDangNhap = ?',
-                    [$params[1], $params[2], $params[3], $params[4], $params[5], $params[0]]
-                );
+                if ($rawPassword === '') {
+                    Database::execute(
+                        'UPDATE TaiKhoan SET HoTen = ?, Email = ?, VaiTro = ?, TrangThai = ? WHERE TenDangNhap = ?',
+                        [$params[2], $params[3], $params[4], $params[5], $params[0]]
+                    );
+                } else {
+                    Database::execute(
+                        'UPDATE TaiKhoan SET MatKhau = ?, HoTen = ?, Email = ?, VaiTro = ?, TrangThai = ? WHERE TenDangNhap = ?',
+                        [password_hash($rawPassword, PASSWORD_DEFAULT), $params[2], $params[3], $params[4], $params[5], $params[0]]
+                    );
+                }
             } elseif ($action === 'delete') {
                 Database::execute('DELETE FROM TaiKhoan WHERE TenDangNhap = ?', [$params[0]]);
             } elseif ($action === 'reset') {
-                Database::execute('UPDATE TaiKhoan SET MatKhau = ? WHERE TenDangNhap = ?', ['123456', $params[0]]);
+                Database::execute('UPDATE TaiKhoan SET MatKhau = ? WHERE TenDangNhap = ?', [password_hash('123456', PASSWORD_DEFAULT), $params[0]]);
             }
 
             $this->redirect('accounts');
@@ -143,7 +152,7 @@ class AuthController extends Controller
             'key' => 'TenDangNhap',
             'fields' => [
                 ['TenDangNhap', 'Tên đăng nhập', 'text', $edit['TenDangNhap'] ?? ''],
-                ['MatKhau', 'Mật khẩu', 'password', $edit['MatKhau'] ?? '123456'],
+                ['MatKhau', 'Mật khẩu', 'password', $edit ? '' : '123456'],
                 ['HoTen', 'Họ tên', 'text', $edit['HoTen'] ?? ''],
                 ['Email', 'Email', 'email', $edit['Email'] ?? ''],
                 ['VaiTro', 'Vai trò', 'select', $edit['VaiTro'] ?? 'Lễ tân', ['Admin', 'Lễ tân', 'Kế toán', 'Khách hàng']],
@@ -158,6 +167,21 @@ class AuthController extends Controller
 
     private function ensureAccountEmailColumn(): void
     {
+        if (Database::isMySql()) {
+            return;
+        }
+        
         Database::execute("IF COL_LENGTH('TaiKhoan', 'Email') IS NULL ALTER TABLE TaiKhoan ADD Email NVARCHAR(100) NULL");
+        Database::execute("IF COL_LENGTH('TaiKhoan', 'MaKH') IS NULL ALTER TABLE TaiKhoan ADD MaKH NVARCHAR(20) NULL");
+        Database::execute(
+            "DECLARE @ConstraintName sysname;
+             SELECT TOP 1 @ConstraintName = cc.name
+             FROM sys.check_constraints cc
+             JOIN sys.tables t ON t.object_id = cc.parent_object_id
+             WHERE t.name = 'TaiKhoan' AND cc.definition LIKE '%VaiTro%';
+             IF @ConstraintName IS NOT NULL EXEC('ALTER TABLE TaiKhoan DROP CONSTRAINT [' + @ConstraintName + ']');
+             IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_TaiKhoan_VaiTro')
+             ALTER TABLE TaiKhoan ADD CONSTRAINT CK_TaiKhoan_VaiTro CHECK (VaiTro IN (N'Admin', N'Lễ tân', N'Kế toán', N'Khách hàng'))"
+        );
     }
 }

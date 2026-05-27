@@ -5,6 +5,9 @@ class RoomController extends Controller
     public function dashboard(): void
     {
         $this->requireLogin();
+        if (($_SESSION['user']['VaiTro'] ?? '') === 'Khách hàng') {
+            $this->redirect('customer-rooms');
+        }
 
         $stats = Database::fetch(
             "SELECT

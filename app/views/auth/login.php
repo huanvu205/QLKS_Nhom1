@@ -25,8 +25,9 @@
             </div>
             <div class="login-actions">
                 <button class="primary-button" type="submit">Đăng nhập</button>
-                <a class="ghost-button" href="index.php?page=login">Thoát</a>
+                <a class="ghost-button" href="index.php?page=register">Đăng ký</a>
             </div>
+            <p class="login-help">Khách hàng cần hỗ trợ đặt phòng vui lòng gọi hotline 0336120405.</p>
         </form>
     </section>
 </main>
